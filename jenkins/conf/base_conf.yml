@@ -1,0 +1,25 @@
+jenkins:
+  systemMessage: "\n\n test\n\n"
+  numExecutors: 1
+  mode: NORMAL
+  scmCheckoutRetryCount: 3
+  labelString: "master-label"
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: ${USER}
+          password: ${PASSWORD}
+  remotingSecurity:
+    enabled: true
+tool:
+  git:
+    installations:
+    - name: Default
+      home: "git"
+
+unclassified:
+  location:
+    url: 127.0.0.1:8080
+
+
