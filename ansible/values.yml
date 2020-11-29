@@ -1,0 +1,5 @@
+---
+jenkins_user: admin
+jenkins_password: admin
+image_name: jenkinsik
+jenkins_url: 127.0.0.1:8080

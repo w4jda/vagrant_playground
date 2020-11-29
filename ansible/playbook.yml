@@ -1,0 +1,89 @@
+---
+
+- name: vm configuration dependencies installation and jenkins startup
+  hosts: all
+  become: yes
+  vars_files: values.yml
+
+  tasks:
+    - name: install docker dependencies
+      apt:
+        name: [ 'apt-transport-https', 'ca-certificates', 'curl', 'gnupg-agent', 'software-properties-common', 'python-pip', default-jdk ]
+        update_cache: yes
+
+    - name: Add Docker GPG key
+      apt_key: url=https://download.docker.com/linux/ubuntu/gpg
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable"
+
+    - name: install specific version of docker-ce
+      apt:
+        name: "docker-ce=5:19.03.13~3-0~ubuntu-bionic"
+        update_cache: yes
+
+    - name: enable docker systemd service
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: create docker group
+      group:
+        name: docker
+        state: present
+
+    # - name: use docker without sudo
+    #   user:
+    #     name: vagrant
+    #     append: yes
+    #     groups: docker
+    #     state: present
+
+    - name: install python packages
+      pip:
+        name: docker-py
+
+    - name: Build image and with build args
+      docker_image:
+        name: "{{ image_name }}"
+        build:
+          path: "{{ playbook_dir }}/../jenkins"
+        source: build
+
+    - name: start jenkins container
+      docker_container:
+        name: jenkins_server
+        image: "{{ image_name }}"
+        state: started
+        ports:
+        - "8080:8080"
+        env:
+          USER: "{{ jenkins_user }}"
+          PASSWORD: "{{ jenkins_password }}"
+          JENKINS_URL: "{{ jenkins_url }}"
+
+    - name: wait for jenkins
+      uri:
+        url: "http://{{ jenkins_url }}/jnlpJars/jenkins-cli.jar"
+        status_code: 200
+      register: result
+      until: result.status == 200
+      retries: 45
+      delay: 1
+
+    - name: cron preparation - copy create_job.sh
+      copy:
+        src: "{{ playbook_dir }}/create_job.sh"
+        dest: /root/create_job.sh
+        owner: root
+        group: root
+        mode: '0700'
+    
+    - name: cron job creation - create jenkins job every 5 minutes
+      cron:
+        name: create jenkins job every 5 minutes
+        minute: "5"
+        job: "/root/create_job.sh http://{{ jenkins_url }}"
+

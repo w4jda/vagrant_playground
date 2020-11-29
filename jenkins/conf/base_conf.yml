@@ -20,6 +20,9 @@ tool:
 
 unclassified:
   location:
-    url: 127.0.0.1:8080
+    url: ${JENKINS_URL}
 
-
+jobs:
+  - script: >
+      pipelineJob('test') {
+          }
