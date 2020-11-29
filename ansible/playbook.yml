@@ -84,6 +84,6 @@
     - name: cron job creation - create jenkins job every 5 minutes
       cron:
         name: create jenkins job every 5 minutes
-        minute: "5"
+        minute: "*/5"
         job: "/root/create_job.sh http://{{ jenkins_url }}"
 
